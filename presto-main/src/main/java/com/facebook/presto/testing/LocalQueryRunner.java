@@ -67,6 +67,7 @@ import com.facebook.presto.operator.ProjectionFunction;
 import com.facebook.presto.operator.ProjectionFunctions;
 import com.facebook.presto.operator.TaskContext;
 import com.facebook.presto.operator.index.IndexJoinLookupStats;
+import com.facebook.presto.server.ServerConfig;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
 import com.facebook.presto.spi.ConnectorFactory;
@@ -528,6 +529,7 @@ public class LocalQueryRunner
         LocalExecutionPlanner executionPlanner = new LocalExecutionPlanner(
                 metadata,
                 sqlParser,
+                new MockQueryManager(),
                 pageSourceManager,
                 indexManager,
                 pageSinkManager,
@@ -535,6 +537,7 @@ public class LocalQueryRunner
                 compiler,
                 new IndexJoinLookupStats(),
                 new CompilerConfig().setInterpreterEnabled(false), // make sure tests fail if compiler breaks
+                new ServerConfig().setCoordinator(false),
                 new TaskManagerConfig().setTaskDefaultConcurrency(4)
         );
 

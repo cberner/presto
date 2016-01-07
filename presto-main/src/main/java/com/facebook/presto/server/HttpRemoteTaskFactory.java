@@ -97,7 +97,8 @@ public class HttpRemoteTaskFactory
             PlanFragment fragment,
             Multimap<PlanNodeId, Split> initialSplits,
             OutputBuffers outputBuffers,
-            PartitionedSplitCountTracker partitionedSplitCountTracker)
+            PartitionedSplitCountTracker partitionedSplitCountTracker,
+            boolean summarizeTaskInfo)
     {
         return new HttpRemoteTask(session,
                 taskId,
@@ -112,6 +113,7 @@ public class HttpRemoteTaskFactory
                 errorScheduledExecutor,
                 minErrorDuration,
                 taskInfoRefreshMaxWait,
+                summarizeTaskInfo,
                 taskInfoCodec,
                 taskUpdateRequestCodec,
                 partitionedSplitCountTracker

@@ -27,6 +27,7 @@ import com.facebook.presto.sql.analyzer.FieldOrExpression;
 import com.facebook.presto.sql.analyzer.RelationType;
 import com.facebook.presto.sql.analyzer.SemanticException;
 import com.facebook.presto.sql.planner.plan.AggregationNode;
+import com.facebook.presto.sql.planner.plan.ExplainAnalyzeNode;
 import com.facebook.presto.sql.planner.plan.FilterNode;
 import com.facebook.presto.sql.planner.plan.JoinNode;
 import com.facebook.presto.sql.planner.plan.PlanNode;
@@ -44,6 +45,7 @@ import com.facebook.presto.sql.tree.Cast;
 import com.facebook.presto.sql.tree.CoalesceExpression;
 import com.facebook.presto.sql.tree.ComparisonExpression;
 import com.facebook.presto.sql.tree.DefaultTraversalVisitor;
+import com.facebook.presto.sql.tree.ExplainAnalyze;
 import com.facebook.presto.sql.tree.Expression;
 import com.facebook.presto.sql.tree.FunctionCall;
 import com.facebook.presto.sql.tree.InPredicate;
@@ -113,6 +115,16 @@ class RelationPlanner
         this.idAllocator = idAllocator;
         this.metadata = metadata;
         this.session = session;
+    }
+
+    @Override
+    protected RelationPlan visitExplainAnalyze(ExplainAnalyze node, Void context)
+    {
+        RelationPlan subPlan = process(node.getStatement(), context);
+        RelationType descriptor = analysis.getOutputDescriptor(node);
+        Symbol outputSymbol = symbolAllocator.newSymbol(descriptor.getFieldByIndex(0));
+        ExplainAnalyzeNode root = new ExplainAnalyzeNode(idAllocator.getNextId(), subPlan.getRoot(), outputSymbol);
+        return new RelationPlan(root, descriptor, ImmutableList.of(outputSymbol), Optional.empty());
     }
 
     @Override

@@ -19,6 +19,7 @@ import com.facebook.presto.metadata.TableHandle;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.sql.tree.Delete;
+import com.facebook.presto.sql.tree.ExplainAnalyze;
 import com.facebook.presto.sql.tree.Expression;
 import com.facebook.presto.sql.tree.FunctionCall;
 import com.facebook.presto.sql.tree.InPredicate;
@@ -51,6 +52,7 @@ import static java.util.Objects.requireNonNull;
 public class Analysis
 {
     private Query query;
+    private ExplainAnalyze explainAnalyze;
     private String updateType;
 
     private final IdentityHashMap<Table, Query> namedQueries = new IdentityHashMap<>();
@@ -101,6 +103,16 @@ public class Analysis
     public void setQuery(Query query)
     {
         this.query = query;
+    }
+
+    public ExplainAnalyze getExplainAnalyze()
+    {
+        return explainAnalyze;
+    }
+
+    public void setExplainAnalyze(ExplainAnalyze explainAnalyze)
+    {
+        this.explainAnalyze = explainAnalyze;
     }
 
     public String getUpdateType()

@@ -53,6 +53,7 @@ import com.facebook.presto.sql.tree.Delete;
 import com.facebook.presto.sql.tree.DereferenceExpression;
 import com.facebook.presto.sql.tree.Except;
 import com.facebook.presto.sql.tree.Explain;
+import com.facebook.presto.sql.tree.ExplainAnalyze;
 import com.facebook.presto.sql.tree.ExplainFormat;
 import com.facebook.presto.sql.tree.ExplainOption;
 import com.facebook.presto.sql.tree.ExplainType;
@@ -133,6 +134,7 @@ import static com.facebook.presto.metadata.MetadataUtil.createQualifiedObjectNam
 import static com.facebook.presto.spi.StandardErrorCode.INVALID_FUNCTION_ARGUMENT;
 import static com.facebook.presto.spi.type.BigintType.BIGINT;
 import static com.facebook.presto.spi.type.BooleanType.BOOLEAN;
+import static com.facebook.presto.spi.type.VarcharType.VARCHAR;
 import static com.facebook.presto.sql.QueryUtil.aliased;
 import static com.facebook.presto.sql.QueryUtil.aliasedName;
 import static com.facebook.presto.sql.QueryUtil.aliasedNullToEmpty;
@@ -704,6 +706,16 @@ class StatementAnalyzer
                         ImmutableList.of("Query Plan")));
 
         return process(query, context);
+    }
+
+    @Override
+    protected RelationType visitExplainAnalyze(ExplainAnalyze node, AnalysisContext context)
+    {
+        process(node.getStatement(), context);
+        analysis.setExplainAnalyze(node);
+        RelationType type = new RelationType(Field.newUnqualified("Query Plan", VARCHAR));
+        analysis.setOutputDescriptor(node, type);
+        return type;
     }
 
     private String getQueryPlan(Explain node, ExplainType.Type planType, ExplainFormat.Type planFormat)

@@ -27,6 +27,7 @@ import com.facebook.presto.sql.planner.plan.DeleteNode;
 import com.facebook.presto.sql.planner.plan.DistinctLimitNode;
 import com.facebook.presto.sql.planner.plan.EnforceSingleRowNode;
 import com.facebook.presto.sql.planner.plan.ExchangeNode;
+import com.facebook.presto.sql.planner.plan.ExplainAnalyzeNode;
 import com.facebook.presto.sql.planner.plan.FilterNode;
 import com.facebook.presto.sql.planner.plan.IndexJoinNode;
 import com.facebook.presto.sql.planner.plan.IndexSourceNode;
@@ -141,6 +142,13 @@ public class UnaliasSymbolReferences
                     canonicalize(node.getSampleWeight()),
                     node.getConfidence(),
                     canonicalize(node.getHashSymbol()));
+        }
+
+        @Override
+        public PlanNode visitExplainAnalyze(ExplainAnalyzeNode node, RewriteContext<Void> context)
+        {
+            PlanNode source = context.rewrite(node.getSource());
+            return new ExplainAnalyzeNode(node.getId(), source, canonicalize(node.getOutputSymbol()));
         }
 
         @Override

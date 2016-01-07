@@ -34,6 +34,7 @@ import com.facebook.presto.sql.planner.plan.TableFinishNode;
 import com.facebook.presto.sql.planner.plan.TableWriterNode;
 import com.facebook.presto.sql.tree.Expression;
 import com.facebook.presto.sql.tree.NullLiteral;
+import com.facebook.presto.sql.tree.Statement;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -232,8 +233,15 @@ public class LogicalPlanner
 
     private RelationPlan createRelationPlan(Analysis analysis)
     {
+        Statement statement;
+        if (analysis.getExplainAnalyze() != null) {
+            statement = analysis.getExplainAnalyze();
+        }
+        else {
+            statement = analysis.getQuery();
+        }
         return new RelationPlanner(analysis, symbolAllocator, idAllocator, metadata, session)
-                .process(analysis.getQuery(), null);
+                .process(statement, null);
     }
 
     private TableMetadata createTableMetadata(QualifiedObjectName table, List<ColumnMetadata> columns, Map<String, Expression> propertyExpressions, boolean sampled)

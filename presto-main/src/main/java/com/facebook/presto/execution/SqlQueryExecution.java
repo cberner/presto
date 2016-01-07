@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.facebook.presto.OutputBuffers.BROADCAST_PARTITION_ID;
@@ -88,6 +89,7 @@ public final class SqlQueryExecution
     private final QueryExplainer queryExplainer;
     private final AtomicReference<SqlQueryScheduler> queryScheduler = new AtomicReference<>();
     private final AtomicReference<QueryInfo> finalQueryInfo = new AtomicReference<>();
+    private final AtomicBoolean summarizeTaskInfo = new AtomicBoolean(true);
     private final NodeTaskMap nodeTaskMap;
     private final ExecutionPolicy executionPolicy;
 
@@ -260,6 +262,10 @@ public final class SqlQueryExecution
         LogicalPlanner logicalPlanner = new LogicalPlanner(stateMachine.getSession(), planOptimizers, idAllocator, metadata);
         Plan plan = logicalPlanner.plan(analysis);
 
+        if (analysis.getExplainAnalyze() != null) {
+            summarizeTaskInfo.set(false);
+        }
+
         // extract inputs
         List<Input> inputs = new InputExtractor(metadata, stateMachine.getSession()).extract(plan.getRoot());
         stateMachine.setInputs(inputs);
@@ -298,6 +304,7 @@ public final class SqlQueryExecution
                 nodeScheduler,
                 remoteTaskFactory,
                 stateMachine.getSession(),
+                summarizeTaskInfo.get(),
                 scheduleSplitBatchSize,
                 queryExecutor,
                 ROOT_OUTPUT_BUFFERS,

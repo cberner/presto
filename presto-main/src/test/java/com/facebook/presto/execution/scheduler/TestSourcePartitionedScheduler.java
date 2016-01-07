@@ -459,6 +459,7 @@ public class TestSourcePartitionedScheduler
                 tableScanPlan.getFragment(),
                 new MockRemoteTaskFactory(executor),
                 TEST_SESSION,
+                true,
                 nodeTaskMap,
                 executor);
 

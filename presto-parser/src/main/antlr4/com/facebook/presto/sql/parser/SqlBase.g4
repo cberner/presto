@@ -47,6 +47,7 @@ statement
     | CREATE (OR REPLACE)? VIEW qualifiedName AS query                 #createView
     | DROP VIEW (IF EXISTS)? qualifiedName                             #dropView
     | EXPLAIN ('(' explainOption (',' explainOption)* ')')? statement  #explain
+    | EXPLAIN ANALYZE statement                                        #explainAnalyze
     | SHOW TABLES ((FROM | IN) qualifiedName)? (LIKE pattern=STRING)?  #showTables
     | SHOW SCHEMAS ((FROM | IN) identifier)?                           #showSchemas
     | SHOW CATALOGS                                                    #showCatalogs
@@ -378,7 +379,7 @@ nonReserved
     | OVER | PARTITION | RANGE | ROWS | PRECEDING | FOLLOWING | CURRENT | ROW | MAP
     | DATE | TIME | TIMESTAMP | INTERVAL | ZONE
     | YEAR | MONTH | DAY | HOUR | MINUTE | SECOND
-    | EXPLAIN | FORMAT | TYPE | TEXT | GRAPHVIZ | LOGICAL | DISTRIBUTED
+    | EXPLAIN | ANALYZE | FORMAT | TYPE | TEXT | GRAPHVIZ | LOGICAL | DISTRIBUTED
     | TABLESAMPLE | SYSTEM | BERNOULLI | POISSONIZED | USE | TO
     | RESCALED | APPROXIMATE | AT | CONFIDENCE
     | SET | RESET
@@ -491,6 +492,7 @@ INTO: 'INTO';
 CONSTRAINT: 'CONSTRAINT';
 DESCRIBE: 'DESCRIBE';
 EXPLAIN: 'EXPLAIN';
+ANALYZE: 'ANALYZE';
 FORMAT: 'FORMAT';
 TYPE: 'TYPE';
 TEXT: 'TEXT';

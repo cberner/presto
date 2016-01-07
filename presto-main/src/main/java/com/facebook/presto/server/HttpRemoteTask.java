@@ -52,6 +52,7 @@ import io.airlift.concurrent.SetThreadName;
 import io.airlift.http.client.FullJsonResponseHandler.JsonResponse;
 import io.airlift.http.client.HttpClient;
 import io.airlift.http.client.HttpStatus;
+import io.airlift.http.client.HttpUriBuilder;
 import io.airlift.http.client.Request;
 import io.airlift.http.client.StatusResponseHandler.StatusResponse;
 import io.airlift.json.JsonCodec;
@@ -141,6 +142,7 @@ public final class HttpRemoteTask
     @GuardedBy("this")
     private final AtomicReference<OutputBuffers> outputBuffers = new AtomicReference<>();
 
+    private final boolean summarizeTaskInfo;
     private final Duration requestTimeout;
     private final ContinuousTaskInfoFetcher continuousTaskInfoFetcher;
 
@@ -170,6 +172,7 @@ public final class HttpRemoteTask
             ScheduledExecutorService errorScheduledExecutor,
             Duration minErrorDuration,
             Duration refreshMaxWait,
+            boolean summarizeTaskInfo,
             JsonCodec<TaskInfo> taskInfoCodec,
             JsonCodec<TaskUpdateRequest> taskUpdateRequestCodec,
             PartitionedSplitCountTracker partitionedSplitCountTracker)
@@ -197,6 +200,7 @@ public final class HttpRemoteTask
             this.httpClient = httpClient;
             this.executor = executor;
             this.errorScheduledExecutor = errorScheduledExecutor;
+            this.summarizeTaskInfo = summarizeTaskInfo;
             this.taskInfoCodec = taskInfoCodec;
             this.taskUpdateRequestCodec = taskUpdateRequestCodec;
             this.updateErrorTracker = new RequestErrorTracker(taskId, location, minErrorDuration, errorScheduledExecutor, "updating task");
@@ -446,8 +450,12 @@ public final class HttpRemoteTask
                 sources,
                 outputBuffers.get());
 
+        HttpUriBuilder uriBuilder = uriBuilderFrom(taskInfo.get().getSelf());
+        if (summarizeTaskInfo) {
+            uriBuilder.addParameter("summarize");
+        }
         Request request = preparePost()
-                .setUri(uriBuilderFrom(taskInfo.get().getSelf()).addParameter("summarize").build())
+                .setUri(uriBuilder.build())
                 .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8.toString())
                 .setBodyGenerator(jsonBodyGenerator(taskUpdateRequestCodec, updateRequest))
                 .build();
@@ -501,8 +509,12 @@ public final class HttpRemoteTask
             }
 
             // send cancel to task and ignore response
+            HttpUriBuilder uriBuilder = uriBuilderFrom(uri).addParameter("abort", "false");
+            if (summarizeTaskInfo) {
+                uriBuilder.addParameter("summarize");
+            }
             Request request = prepareDelete()
-                    .setUri(uriBuilderFrom(uri).addParameter("abort", "false").addParameter("summarize").build())
+                    .setUri(uriBuilder.build())
                     .build();
             scheduleAsyncCleanupRequest(new Backoff(MAX_CLEANUP_RETRY_TIME), request, "cancel");
         }
@@ -540,8 +552,12 @@ public final class HttpRemoteTask
                     ImmutableList.<ExecutionFailureInfo>of()));
 
             // send abort to task and ignore response
+            HttpUriBuilder uriBuilder = uriBuilderFrom(uri);
+            if (summarizeTaskInfo) {
+                uriBuilder.addParameter("summarize");
+            }
             Request request = prepareDelete()
-                    .setUri(uriBuilderFrom(uri).addParameter("summarize").build())
+                    .setUri(uriBuilder.build())
                     .build();
             scheduleAsyncCleanupRequest(new Backoff(MAX_CLEANUP_RETRY_TIME), request, "abort");
         }
@@ -743,8 +759,12 @@ public final class HttpRemoteTask
                 return;
             }
 
+            HttpUriBuilder uriBuilder = uriBuilderFrom(taskInfo.getSelf());
+            if (summarizeTaskInfo) {
+                uriBuilder.addParameter("summarize");
+            }
             Request request = prepareGet()
-                    .setUri(uriBuilderFrom(taskInfo.getSelf()).addParameter("summarize").build())
+                    .setUri(uriBuilder.build())
                     .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8.toString())
                     .setHeader(PrestoHeaders.PRESTO_CURRENT_STATE, taskInfo.getState().toString())
                     .setHeader(PrestoHeaders.PRESTO_MAX_WAIT, refreshMaxWait.toString())
