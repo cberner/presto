@@ -52,7 +52,6 @@ import static java.util.Objects.requireNonNull;
 public class Analysis
 {
     private Query query;
-    private ExplainAnalyze explainAnalyze;
     private String updateType;
 
     private final IdentityHashMap<Table, Query> namedQueries = new IdentityHashMap<>();
@@ -95,6 +94,9 @@ public class Analysis
     // for delete
     private Optional<Delete> delete = Optional.empty();
 
+    // for explain analyze
+    private Optional<ExplainAnalyze> explainAnalyze = Optional.empty();
+
     public Query getQuery()
     {
         return query;
@@ -105,14 +107,14 @@ public class Analysis
         this.query = query;
     }
 
-    public ExplainAnalyze getExplainAnalyze()
+    public Optional<ExplainAnalyze> getExplainAnalyze()
     {
         return explainAnalyze;
     }
 
     public void setExplainAnalyze(ExplainAnalyze explainAnalyze)
     {
-        this.explainAnalyze = explainAnalyze;
+        this.explainAnalyze = Optional.of(explainAnalyze);
     }
 
     public String getUpdateType()

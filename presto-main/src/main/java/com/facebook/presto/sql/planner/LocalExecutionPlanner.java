@@ -1557,7 +1557,7 @@ public class LocalExecutionPlanner
             if (isBuildOuter(node) || hashBuildConcurrency <= 1) {
                 HashBuilderOperatorFactory hashBuilderOperatorFactory = new HashBuilderOperatorFactory(
                         buildContext.getNextOperatorId(),
-                        node.getId(),
+                        buildNode.getId(),
                         buildSource.getTypes(),
                         buildChannels,
                         buildHashChannel,

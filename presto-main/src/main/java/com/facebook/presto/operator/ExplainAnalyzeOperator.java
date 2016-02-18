@@ -15,6 +15,7 @@ package com.facebook.presto.operator;
 
 import com.facebook.presto.execution.QueryInfo;
 import com.facebook.presto.execution.QueryManager;
+import com.facebook.presto.execution.StageInfo;
 import com.facebook.presto.metadata.Metadata;
 import com.facebook.presto.spi.Page;
 import com.facebook.presto.spi.block.BlockBuilder;
@@ -26,7 +27,9 @@ import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 
+import static com.facebook.presto.execution.StageInfo.getAllStages;
 import static com.facebook.presto.spi.type.VarcharType.VARCHAR;
+import static com.facebook.presto.sql.planner.PlanPrinter.textStagePlanWithoutStatistics;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
@@ -134,11 +137,36 @@ public class ExplainAnalyzeOperator
         if (!finished) {
             return null;
         }
-        outputConsumed = true;
+
         QueryInfo queryInfo = queryManager.getQueryInfo(operatorContext.getDriverContext().getTaskId().getQueryId());
-        String plan = PlanPrinter.textDistributedPlan(queryInfo, metadata, operatorContext.getSession());
+        if (!haveUpstreamOperatorsFinished(queryInfo)) {
+            return null;
+        }
+
+        outputConsumed = true;
+
+        StringBuilder plan = new StringBuilder();
+        List<StageInfo> stages = getAllStages(queryInfo.getOutputStage());
+        plan.append(textStagePlanWithoutStatistics(stages.get(0), metadata, operatorContext.getSession()));
+        for (StageInfo stageInfo : stages.subList(1, stages.size())) {
+            plan.append(PlanPrinter.textStagePlanWithStatistics(stageInfo, metadata, operatorContext.getSession()));
+        }
+
         BlockBuilder builder = VARCHAR.createBlockBuilder(new BlockBuilderStatus(), 1);
-        VARCHAR.writeString(builder, plan);
+        VARCHAR.writeString(builder, plan.toString());
+
         return new Page(builder.build());
+    }
+
+    private boolean haveUpstreamOperatorsFinished(QueryInfo queryInfo)
+    {
+        List<StageInfo> stages = getAllStages(queryInfo.getOutputStage());
+        // all but first stage containing explain analyze should be done
+        for (StageInfo stageInfo : stages.subList(1, stages.size())) {
+            if (!stageInfo.getTasks().stream().allMatch(task -> task.getState().isDone())) {
+                return false;
+            }
+        }
+        return true;
     }
 }

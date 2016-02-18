@@ -262,7 +262,7 @@ public final class SqlQueryExecution
         LogicalPlanner logicalPlanner = new LogicalPlanner(stateMachine.getSession(), planOptimizers, idAllocator, metadata);
         Plan plan = logicalPlanner.plan(analysis);
 
-        if (analysis.getExplainAnalyze() != null) {
+        if (analysis.getExplainAnalyze().isPresent()) {
             summarizeTaskInfo.set(false);
         }
 

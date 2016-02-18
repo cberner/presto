@@ -42,6 +42,7 @@ import com.facebook.presto.sql.planner.plan.DeleteNode;
 import com.facebook.presto.sql.planner.plan.DistinctLimitNode;
 import com.facebook.presto.sql.planner.plan.EnforceSingleRowNode;
 import com.facebook.presto.sql.planner.plan.ExchangeNode;
+import com.facebook.presto.sql.planner.plan.ExplainAnalyzeNode;
 import com.facebook.presto.sql.planner.plan.FilterNode;
 import com.facebook.presto.sql.planner.plan.IndexJoinNode;
 import com.facebook.presto.sql.planner.plan.IndexSourceNode;
@@ -232,6 +233,17 @@ public class AddExchanges
                         gatheringExchange(idAllocator.getNextId(), child.getNode()),
                         child.getProperties());
             }
+
+            return rebaseAndDeriveProperties(node, child);
+        }
+
+        public PlanWithProperties visitExplainAnalyze(ExplainAnalyzeNode node, Context context)
+        {
+            PlanWithProperties child = planChild(node, context.withPreferredProperties(PreferredProperties.any()));
+
+            child = withDerivedProperties(
+                    gatheringExchange(idAllocator.getNextId(), child.getNode()),
+                    child.getProperties());
 
             return rebaseAndDeriveProperties(node, child);
         }
@@ -1143,6 +1155,7 @@ public class AddExchanges
     {
         private final PlanNode node;
         private final ActualProperties properties;
+
         public PlanWithProperties(PlanNode node, ActualProperties properties)
         {
             this.node = node;

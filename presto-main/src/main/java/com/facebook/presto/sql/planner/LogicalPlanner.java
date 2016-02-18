@@ -80,6 +80,12 @@ public class LogicalPlanner
     public Plan plan(Analysis analysis)
     {
         RelationPlan plan;
+
+        if (analysis.getExplainAnalyze().isPresent()
+                && (analysis.getCreateTableDestination().isPresent() || analysis.getInsert().isPresent() || analysis.getDelete().isPresent())) {
+            throw new PrestoException(NOT_SUPPORTED, "EXPLAIN ANALYZE not supported for CREATE TABLE, INSERT or DELETE query");
+        }
+
         if (analysis.getCreateTableDestination().isPresent()) {
             plan = createTableCreationPlan(analysis);
         }
@@ -234,8 +240,8 @@ public class LogicalPlanner
     private RelationPlan createRelationPlan(Analysis analysis)
     {
         Statement statement;
-        if (analysis.getExplainAnalyze() != null) {
-            statement = analysis.getExplainAnalyze();
+        if (analysis.getExplainAnalyze().isPresent()) {
+            statement = analysis.getExplainAnalyze().get();
         }
         else {
             statement = analysis.getQuery();
