@@ -36,6 +36,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import io.airlift.log.Logger;
 import io.airlift.units.DataSize;
 import io.airlift.units.DataSize.Unit;
 import org.apache.hadoop.fs.Path;
@@ -120,6 +121,7 @@ import static org.testng.Assert.assertTrue;
 public class OrcTester
 {
     public static final DateTimeZone HIVE_STORAGE_TIME_ZONE = DateTimeZone.forID("Asia/Katmandu");
+    private static final Logger log = Logger.get(OrcTester.class);
 
     private static final TypeManager TYPE_MANAGER = new TypeRegistry();
 
@@ -345,6 +347,7 @@ public class OrcTester
                 }
             }
         }
+        log.info("Tested %s (%s) with all combinations of %s and %s", objectInspector.getTypeName(), type.getDisplayName(), formats, compressions);
     }
 
     private static void assertFileContents(ObjectInspector objectInspector,
