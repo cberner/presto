@@ -13,7 +13,9 @@ env:
     - TEST_SPECIFIC_MODULES=presto-accumulo
     - TEST_SPECIFIC_MODULES=presto-cassandra
     - TEST_SPECIFIC_MODULES=presto-hive,presto-kafka,presto-mysql,presto-postgresql,presto-redis
-    - TEST_OTHER_MODULES=!presto-tests,!presto-raptor,!presto-accumulo,!presto-cassandra,!presto-hive,!presto-kafka,!presto-mysql,!presto-postgresql,!presto-redis,!presto-docs,!presto-server,!presto-server-rpm
+    - TEST_SPECIFIC_MODULES=presto-orc
+      PROFILE=-Pci
+    - TEST_OTHER_MODULES=!presto-tests,!presto-raptor,!presto-accumulo,!presto-cassandra,!presto-hive,!presto-kafka,!presto-mysql,!presto-postgresql,!presto-redis,!presto-docs,!presto-server,!presto-server-rpm,!presto-orc
     - PRODUCT_TESTS=true
     - HIVE_TESTS=true
 
@@ -53,7 +55,7 @@ script:
     fi
   - |
     if [[ -v TEST_SPECIFIC_MODULES ]]; then
-      ./mvnw test $MAVEN_SKIP_CHECKS_AND_DOCS -B -pl $TEST_SPECIFIC_MODULES
+      ./mvnw test $MAVEN_SKIP_CHECKS_AND_DOCS -B -pl $TEST_SPECIFIC_MODULES $PROFILE
     fi
   - |
     if [[ -v TEST_OTHER_MODULES ]]; then
