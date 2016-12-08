@@ -100,13 +100,13 @@ public final class Chars
     public static Slice trimSpaces(Slice slice)
     {
         requireNonNull(slice, "slice is null");
-        return slice.slice(0, sliceLengthWithoutTrailingSpaces(slice));
+        return slice.slice(0, sliceLengthWithoutTrailingSpaces(slice, 0, slice.length()));
     }
 
-    private static int sliceLengthWithoutTrailingSpaces(Slice slice)
+    public static int sliceLengthWithoutTrailingSpaces(Slice slice, int offset, int length)
     {
-        for (int i = slice.length(); i > 0; --i) {
-            if (slice.getByte(i - 1) != ' ') {
+        for (int i = length; i > 0; --i) {
+            if (slice.getByte(i - 1 + offset) != ' ') {
                 return i;
             }
         }

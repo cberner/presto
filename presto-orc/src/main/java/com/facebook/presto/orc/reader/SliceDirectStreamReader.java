@@ -22,8 +22,11 @@ import com.facebook.presto.orc.stream.LongStream;
 import com.facebook.presto.orc.stream.StreamSource;
 import com.facebook.presto.orc.stream.StreamSources;
 import com.facebook.presto.spi.block.Block;
-import com.facebook.presto.spi.block.SliceArrayBlock;
+import com.facebook.presto.spi.block.BlockBuilder;
+import com.facebook.presto.spi.block.BlockBuilderStatus;
+import com.facebook.presto.spi.type.CharType;
 import com.facebook.presto.spi.type.Type;
+import com.facebook.presto.spi.type.VarcharType;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
@@ -39,10 +42,10 @@ import static com.facebook.presto.orc.metadata.Stream.StreamKind.LENGTH;
 import static com.facebook.presto.orc.metadata.Stream.StreamKind.PRESENT;
 import static com.facebook.presto.orc.stream.MissingStreamSource.missingStreamSource;
 import static com.facebook.presto.spi.type.Chars.isCharType;
-import static com.facebook.presto.spi.type.Chars.trimSpacesAndTruncateToLength;
+import static com.facebook.presto.spi.type.Chars.sliceLengthWithoutTrailingSpaces;
 import static com.facebook.presto.spi.type.Varchars.isVarcharType;
-import static com.facebook.presto.spi.type.Varchars.truncateToLength;
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static io.airlift.slice.SliceUtf8.offsetOfCodePoint;
 import static java.util.Objects.requireNonNull;
 
 public class SliceDirectStreamReader
@@ -152,20 +155,18 @@ public class SliceDirectStreamReader
             data = dataStream.next(totalLength);
         }
 
-        Slice[] sliceVector = new Slice[nextBatchSize];
+        Slice rawData = Slices.wrappedBuffer(data);
+        BlockBuilder builder = type.createBlockBuilder(new BlockBuilderStatus(), nextBatchSize, data.length / nextBatchSize);
 
         int offset = 0;
         for (int i = 0; i < nextBatchSize; i++) {
-            if (!isNullVector[i]) {
+            if (isNullVector[i]) {
+                builder.appendNull();
+            }
+            else {
                 int length = lengthVector[i];
-                Slice value = Slices.wrappedBuffer(data, offset, length);
-                if (isVarcharType(type)) {
-                    value = truncateToLength(value, type);
-                }
-                if (isCharType(type)) {
-                    value = trimSpacesAndTruncateToLength(value, type);
-                }
-                sliceVector[i] = value;
+                int valueLength = truncatedLength(rawData, offset, length, type);
+                type.writeSlice(builder, rawData, offset, valueLength);
                 offset += length;
             }
         }
@@ -173,7 +174,37 @@ public class SliceDirectStreamReader
         readOffset = 0;
         nextBatchSize = 0;
 
-        return new SliceArrayBlock(sliceVector.length, sliceVector);
+        return builder.build();
+    }
+
+    private static int truncatedLength(Slice data, int offset, int length, Type type)
+    {
+        if (isVarcharType(type)) {
+            int maxCodePoints = ((VarcharType) type).getLength();
+            if (length <= maxCodePoints) {
+                return length;
+            }
+            return truncateCodePoints(data, offset, length, maxCodePoints);
+        }
+        if (isCharType(type)) {
+            int maxCodePoints = ((CharType) type).getLength();
+            if (length <= maxCodePoints) {
+                return length;
+            }
+            int truncatedLength = truncateCodePoints(data, offset, length, maxCodePoints);
+            truncatedLength = sliceLengthWithoutTrailingSpaces(data, offset, truncatedLength);
+            return truncatedLength;
+        }
+        return length;
+    }
+
+    private static int truncateCodePoints(Slice data, int offset, int length, int maxCodePoints)
+    {
+        int truncatedLength = offsetOfCodePoint(data, offset, maxCodePoints) - offset;
+        if (truncatedLength < 0 || truncatedLength > length) {
+            return length;
+        }
+        return truncatedLength;
     }
 
     private void openRowGroup()
